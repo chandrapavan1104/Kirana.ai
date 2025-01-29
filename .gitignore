@@ -1,0 +1,15 @@
+# Node.js & Next.js files
+node_modules/
+.next/
+out/
+.env
+
+# Python & FastAPI files
+__pycache__/
+*.pyc
+instance/
+.env
+venv/
+
+# System files
+.DS_Store
