@@ -1,61 +1,33 @@
-from phidata.ai import AiAgent, AiTool
-from groq import Groq
+# backend/agent.py
+
+from phi.agent import Agent
+from phi.model.groq import Groq
+from inventory_toolkit import InventoryToolkit
 import os
-from main.py import add_item, update_item, delete_item, get_inventory
+from dotenv import load_dotenv
 
-# Set up Groq client
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-client = Groq(api_key=GROQ_API_KEY)
-
-# Function to process natural language inventory commands
-def process_inventory_command(prompt: str) -> str:
-    completion = client.chat.completions.create(
-        model="deepseek-r1-distill-llama-70b",
-        messages=[{"role": "user", "content": f"Extract the operation and details from this inventory command: {prompt}"}],
-        temperature=0.6,
-        max_completion_tokens=100,
-        top_p=0.95,
-        stream=False
-    )
-    
-    response = completion.choices[0].message.content.lower()
-    
-    # Extract intent and perform CRUD operation
-    if "add" in response:
-        parts = response.split()
-        quantity = int(parts[-2])  # Assuming format: "Add 5 kg of rice"
-        name = " ".join(parts[1:-2])
-        return add_item(name, quantity)
-    
-    elif "update" in response:
-        parts = response.split()
-        quantity = int(parts[-2])
-        name = " ".join(parts[1:-2])
-        return update_item(name, quantity)
-    
-    elif "delete" in response or "remove" in response:
-        name = response.replace("delete ", "").replace("remove ", "").strip()
-        return delete_item(name)
-    
-    elif "list" in response or "show" in response:
-        inventory = get_inventory()
-        return "\n".join([f"{name}: {quantity}" for name, quantity in inventory])
-    
-    else:
-        return "Sorry, I couldn't understand the request."
-
-# Define AI Tool for handling CRUD
-inventory_tool = AiTool(
-    name="inventory_tool",
-    description="A tool to manage inventory via natural language",
-    run_fn=process_inventory_command,
+load_dotenv()
+# Initialize the Groq model
+groq_model = Groq(
+    id="gemma2-9b-it",  # Replace with your specific model ID
+    api_key=os.getenv("GROQ_API_KEY")
 )
 
-# Create Phidata AI Agent with the inventory tool
-inventory_agent = AiAgent(
-    name="inventory_agent",
-    description="An AI agent for managing inventory using DeepSeek LLM",
-    tools=[inventory_tool],
+# Initialize the Inventory Toolkit
+inventory_toolkit = InventoryToolkit()
+
+# Create the AI agent with the Groq model and Inventory Toolkit
+agent = Agent(
+    model=groq_model,
+    tools=[inventory_toolkit],
+    description="An AI agent for managing inventory using natural language commands.",
+    instructions=[
+        "You can add, update, delete, or list items in the inventory.",
+        "For example: 'Add 10 units of rice', 'Update wheat to 15 units', 'Delete sugar from inventory', 'List all items'.",
+        "Always confirm actions with the user before executing them."
+    ],
+    markdown=True,
+    show_tool_calls=True,
 )
 
 if __name__ == "__main__":
@@ -63,4 +35,5 @@ if __name__ == "__main__":
         user_input = input("Enter your inventory command: ")
         if user_input.lower() in ["exit", "quit"]:
             break
-        print(inventory_agent.run(user_input))
+        response = agent.run(user_input)
+        print(response.content)
