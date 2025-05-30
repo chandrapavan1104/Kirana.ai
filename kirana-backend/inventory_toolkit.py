@@ -1,37 +1,60 @@
-# backend/inventory_toolkit.py
+from inventory import add_item, update_item, delete_item, list_inventory
+from typing import Dict, Any
 
-from phi.tools import Toolkit
-from inventory import add_item, update_item, delete_item, get_inventory
+class InventoryToolkit:
+    """A toolkit for managing inventory with CRUD operations, including unit types."""
 
-class InventoryToolkit(Toolkit):
-    def __init__(self):
-        super().__init__(name="inventory_toolkit")
-        self.register(self.add_item)
-        self.register(self.update_item)
-        self.register(self.delete_item)
-        self.register(self.get_inventory)
+    def add_item(self, name: str, quantity: float, unit: str) -> Dict[str, Any]:
+        """
+        Adds an item to the inventory.
 
-    def add_item(self, name: str, quantity: int) -> str:
-        """Add an item to the inventory."""
-        result = add_item(name, quantity)
-        return f"Added {quantity} units of {name}." if result else "Failed to add item."
+        Args:
+            name (str): The name of the item.
+            quantity (float): The number of units to add.
+            unit (str): The unit of measurement (kg, litre, etc.).
 
-    def update_item(self, name: str, quantity: int) -> str:
-        """Update the quantity of an existing item."""
-        result = update_item(name, quantity)
-        return f"Updated {name} to {quantity} units." if result else "Failed to update item."
+        Returns:
+            Dict[str, Any]: Response with success status and item details.
+        """
+        if not unit:
+            unit = "unknown"  # Default to "unknown" if no unit is provided
 
-    def delete_item(self, name: str) -> str:
-        """Delete an item from the inventory."""
-        result = delete_item(name)
-        return f"Deleted {name} from inventory." if result else "Failed to delete item."
+        return add_item(name, quantity, unit)
 
-    def get_inventory(self) -> str:
-        """Retrieve the current inventory list."""
-        inventory_data = get_inventory()  # Now it returns a dictionary
+    def update_item(self, name: str, quantity: float, unit: str) -> Dict[str, Any]:
+        """
+        Updates an item's quantity in the inventory.
 
-        if "message" in inventory_data:
-            return inventory_data["message"]  # If inventory is empty
+        Args:
+            name (str): The name of the item.
+            quantity (float): The new quantity.
+            unit (str): The unit of measurement (kg, litre, etc.).
 
-        return "\n".join([f"{name}: {quantity}" for name, quantity in inventory_data.items()])
+        Returns:
+            Dict[str, Any]: Response with success status and item details.
+        """
+        if not unit:
+            unit = "unknown"
 
+        return update_item(name, quantity, unit)
+
+    def delete_item(self, name: str) -> Dict[str, Any]:
+        """
+        Deletes an item from the inventory.
+
+        Args:
+            name (str): The name of the item.
+
+        Returns:
+            Dict[str, Any]: Response with success status.
+        """
+        return delete_item(name)
+
+    def list_inventory(self) -> Dict[str, Any]:
+        """
+        Lists all items in the inventory, including unit type.
+
+        Returns:
+            Dict[str, Any]: Response with success status and inventory list.
+        """
+        return list_inventory()

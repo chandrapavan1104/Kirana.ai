@@ -1,74 +1,165 @@
-# In-memory inventory list
-inventory = [
-    {"name": "Rice", "quantity": 10},
-    {"name": "Wheat", "quantity": 20}
-]
+from typing import Dict, List, Optional, Any
+from datetime import datetime
 
-# CRUD Functions
+# In-memory storage
+inventory_items: Dict[str, Dict] = {}
+inventory: Dict[str, Dict] = {}
 
-def add_item(name: str, quantity: int) -> str:
+def add_item(name: str, quantity: float, unit: str) -> Dict[str, Any]:
     """
-    Adds an item to the inventory. If the item exists, updates the quantity.
-
+    Adds an item to the inventory.
+    
     Args:
         name (str): The name of the item.
-        quantity (int): The number of units to add.
-
+        quantity (float): The number of units to add.
+        unit (str): The unit of measurement (kg, litre, etc.).
+        
     Returns:
-        str: A message indicating the success of the operation.
+        Dict[str, Any]: Response with success status and item details.
     """
-    for item in inventory:
-        if item["name"].lower() == name.lower():
-            item["quantity"] += quantity
-            return f"Added {quantity} more units of {name}."
+    try:
+        # Add to inventory_items if not exists
+        if name not in inventory_items:
+            inventory_items[name] = {
+                "name": name,
+                "unit": unit,
+                "price": 0.0,  # Default price
+                "created_at": datetime.now(),
+                "updated_at": datetime.now()
+            }
+        
+        # Update inventory
+        if name in inventory:
+            inventory[name]["quantity"] += quantity
+            inventory[name]["updated_at"] = datetime.now()
+        else:
+            inventory[name] = {
+                "item_id": name,
+                "quantity": quantity,
+                "created_at": datetime.now(),
+                "updated_at": datetime.now()
+            }
+        
+        return {
+            "success": True,
+            "item": {
+                "id": name,
+                "name": name,
+                "quantity_added": quantity,
+                "unit": unit,
+                "price": inventory_items[name]["price"]
+            },
+            "response": f"✅ Added {quantity} {unit} of {name} to inventory."
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "response": f"❌ Error adding item: {str(e)}"
+        }
+
+def update_item(name: str, quantity: float, unit: str) -> Dict[str, Any]:
+    """
+    Updates an item's quantity in the inventory.
     
-    inventory.append({"name": name, "quantity": quantity})
-    return f"Added {quantity} units of {name}."
-
-def update_item(name: str, quantity: int) -> str:
-    """
-    Updates the quantity of an existing item in the inventory.
-
     Args:
         name (str): The name of the item.
-        quantity (int): The new quantity to set.
-
+        quantity (float): The new quantity.
+        unit (str): The unit of measurement (kg, litre, etc.).
+        
     Returns:
-        str: A message indicating whether the update was successful or if the item was not found.
+        Dict[str, Any]: Response with success status and item details.
     """
-    for item in inventory:
-        if item["name"].lower() == name.lower():
-            item["quantity"] = quantity
-            return f"Updated {name} to {quantity} units."
-    
-    return f"Item '{name}' not found in inventory."
+    try:
+        if name not in inventory:
+            return {
+                "success": False,
+                "response": f"❌ Item {name} not found in inventory."
+            }
+        
+        inventory[name]["quantity"] = quantity
+        inventory[name]["updated_at"] = datetime.now()
+        
+        # Update unit in inventory_items if it exists
+        if name in inventory_items:
+            inventory_items[name]["unit"] = unit
+            inventory_items[name]["updated_at"] = datetime.now()
+        
+        return {
+            "success": True,
+            "item": {
+                "id": name,
+                "name": name,
+                "quantity": quantity,
+                "unit": unit,
+                "price": inventory_items[name]["price"]
+            },
+            "response": f"✅ Updated {name} to {quantity} {unit}."
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "response": f"❌ Error updating item: {str(e)}"
+        }
 
-def delete_item(name: str) -> str:
+def delete_item(name: str) -> Dict[str, Any]:
     """
     Deletes an item from the inventory.
-
-    Args:
-        name (str): The name of the item to delete.
-
-    Returns:
-        str: A message indicating whether the deletion was successful or if the item was not found.
-    """
-    global inventory
-    for item in inventory:
-        if item["name"].lower() == name.lower():
-            inventory = [i for i in inventory if i["name"].lower() != name.lower()]
-            return f"Deleted {name} from inventory."
     
-    return f"Item '{name}' not found in inventory."
-
-def get_inventory() -> dict:
-    """
-    Retrieves the current inventory.
-
+    Args:
+        name (str): The name of the item.
+        
     Returns:
-        dict: A dictionary where keys are item names and values are their quantities.
+        Dict[str, Any]: Response with success status.
     """
-    if not inventory:
-        return {"message": "Inventory is empty."}
+    try:
+        if name not in inventory:
+            return {
+                "success": False,
+                "response": f"❌ Item {name} not found in inventory."
+            }
+        
+        del inventory[name]
+        if name in inventory_items:
+            del inventory_items[name]
+        
+        return {
+            "success": True,
+            "response": f"✅ Deleted {name} from inventory."
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "response": f"❌ Error deleting item: {str(e)}"
+        }
 
-    return {item["name"]: item["quantity"] for item in inventory}
+def list_inventory() -> Dict[str, Any]:
+    """
+    Lists all items in the inventory.
+    
+    Returns:
+        Dict[str, Any]: Response with success status and inventory list.
+    """
+    try:
+        if not inventory:
+            return {
+                "success": True,
+                "response": "📦 Inventory is empty."
+            }
+        
+        # Format the inventory list
+        inventory_list = "📦 Current Inventory:\n"
+        for name, data in inventory.items():
+            unit = inventory_items.get(name, {}).get("unit", "units")
+            inventory_list += f"- {name}: {data['quantity']} {unit}\n"
+        
+        return {
+            "success": True,
+            "response": inventory_list
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "response": f"❌ Error listing inventory: {str(e)}"
+        }
+
+# Note: You will need separate functions/endpoints to manage the inventory_items table (add, update, delete item types with prices and default units).
