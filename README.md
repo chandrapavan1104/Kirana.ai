@@ -9,18 +9,14 @@ Kirana.ai is an intelligent inventory management system that combines natural la
 - 📱 Modern React Dashboard
 - 🔄 Real-time Inventory Updates
 - 🛒 Shopping Cart Integration
-- 📊 Inventory Analytics
-- 🔍 Smart Search
-- 🔐 User Authentication
 
 ## Tech Stack
 
 ### Backend
 - FastAPI (Python)
-- SQLAlchemy (ORM)
 - Whisper (Speech-to-Text)
 - Transformers (NLP)
-- SQLite (Database)
+- In-memory Storage (Temporary)
 
 ### Frontend
 - Next.js
@@ -58,12 +54,7 @@ source myenv/bin/activate  # On Windows: myenv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Initialize the database:
-```bash
-python -c "from database import init_db; init_db()"
-```
-
-5. Start the backend server:
+4. Start the backend server:
 ```bash
 uvicorn main:app --reload
 ```
@@ -126,11 +117,12 @@ You can also type commands in the chat interface:
 ### Backend API
 
 - `POST /text-command`: Process text commands
+  - Request body: `{ "command": "string" }`
+  - Response: `{ "success": boolean, "response": string, "item": object }`
+
 - `POST /transcribe`: Process voice commands
-- `GET /inventory`: Get inventory status
-- `POST /inventory/add`: Add items
-- `PUT /inventory/update`: Update items
-- `DELETE /inventory/delete`: Delete items
+  - Request: Form data with audio file
+  - Response: `{ "transcription": string }`
 
 ## Project Structure
 
@@ -142,14 +134,16 @@ Kirana.ai/
 │   ├── inventory.py         # Inventory management
 │   ├── inventory_toolkit.py # Inventory operations
 │   ├── command_parser_agent.py # NLP command parsing
-│   ├── database.py          # Database configuration
-│   ├── models.py            # SQLAlchemy models
 │   └── requirements.txt     # Python dependencies
 │
 └── kirana-dashboard/
     ├── src/
     │   ├── components/      # React components
+    │   │   ├── Chatbot.tsx  # Chat interface
+    │   │   ├── CartModal.tsx # Cart management
+    │   │   └── CartIcon.tsx # Cart icon
     │   ├── context/         # React context
+    │   │   └── cartContext.tsx # Cart state management
     │   ├── pages/           # Next.js pages
     │   └── styles/          # CSS styles
     ├── package.json         # Node.js dependencies
